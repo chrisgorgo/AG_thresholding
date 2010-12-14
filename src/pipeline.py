@@ -11,7 +11,7 @@ from nipype.interfaces import fsl
 data_dir = os.path.abspath('/media/sdb2/laura_study/DATA_4_chis/')
 
 task_dict = {'AG_1240':17.5 #}
-             , 'AG_1241':13.1,'AG_1247':10,'AG_1251':6,'AG_1255':3,'AG_1256':10,
+             , 'AG_1241':13.1,'AG_1247':10,'AG_1251':6,'AG_1255':10.3,'AG_1256':10,
                 'AG_1257':9,'AG_1260':9, 'AG_1261':5.7,'AG_1262':10, 
                 'AG_1264':7}
 
@@ -146,6 +146,53 @@ compare_pipeline.connect([(datasource, topo_fdr_with_fwe,[('spm_mat_file','spm_m
                           (datasource, topo_fdr_with_fwe_ev, [('tumour_mask','inputnode.tumour_mask')])
                           ])
 
+topo_fdr_with_fwe_ui_0_0001 = pe.Node(interface = spm.Threshold(), name="topo_fdr_with_fwe_ui_0_0001")
+topo_fdr_with_fwe_ui_0_0001.inputs.contrast_index = 3
+topo_fdr_with_fwe_ui_0_0001.inputs.extent_threshold = 10
+topo_fdr_with_fwe_ui_0_0001.inputs.height_threshold = 0.0001
+
+topo_fdr_with_fwe_ui_0_0001_ev = evaluation_worflow.clone(name="topo_fdr_with_fwe_ui_0_0001_ev")
+
+compare_pipeline.connect([(datasource, topo_fdr_with_fwe_ui_0_0001,[('spm_mat_file','spm_mat_file')]),
+                          (convert_t_map, topo_fdr_with_fwe_ui_0_0001, [('fix_affine.transformed_volumes','stat_image')]),
+                                                
+                          (topo_fdr_with_fwe_ui_0_0001, topo_fdr_with_fwe_ui_0_0001_ev, [('thresholded_map','inputnode.map_to_evaluate')]),            
+                          (convert_manual, topo_fdr_with_fwe_ui_0_0001_ev, [('fix_affine.transformed_volumes', 'inputnode.expert_map')]),                 
+                          (datasource, topo_fdr_with_fwe_ui_0_0001_ev, [('tumour_mask','inputnode.tumour_mask')])
+                          ])
+
+topo_fdr_with_fwe_ui_5uncorr = pe.Node(interface = spm.Threshold(), name="topo_fdr_with_fwe_ui_5uncorr")
+topo_fdr_with_fwe_ui_5uncorr.inputs.contrast_index = 3
+topo_fdr_with_fwe_ui_5uncorr.inputs.extent_threshold = 10
+topo_fdr_with_fwe_ui_5uncorr.inputs.height_threshold = 5
+topo_fdr_with_fwe_ui_5uncorr.inputs.use_fwe_correction = False
+
+topo_fdr_with_fwe_ui_5uncorr_ev = evaluation_worflow.clone(name="topo_fdr_with_fwe_ui_5uncorr_ev")
+
+compare_pipeline.connect([(datasource, topo_fdr_with_fwe_ui_5uncorr,[('spm_mat_file','spm_mat_file')]),
+                          (convert_t_map, topo_fdr_with_fwe_ui_5uncorr, [('fix_affine.transformed_volumes','stat_image')]),
+                                                
+                          (topo_fdr_with_fwe_ui_5uncorr, topo_fdr_with_fwe_ui_5uncorr_ev, [('thresholded_map','inputnode.map_to_evaluate')]),            
+                          (convert_manual, topo_fdr_with_fwe_ui_5uncorr_ev, [('fix_affine.transformed_volumes', 'inputnode.expert_map')]),                 
+                          (datasource, topo_fdr_with_fwe_ui_5uncorr_ev, [('tumour_mask','inputnode.tumour_mask')])
+                          ])
+
+topo_fdr_with_fwe_ui_laura = pe.Node(interface = spm.Threshold(), name="topo_fdr_with_fwe_ui_laura")
+topo_fdr_with_fwe_ui_laura.inputs.contrast_index = 3
+topo_fdr_with_fwe_ui_laura.inputs.extent_threshold = 10
+topo_fdr_with_fwe_ui_laura.inputs.use_fwe_correction = False
+topo_fdr_with_fwe_ui_laura.inputs.use_topo_fdr = False
+
+topo_fdr_with_fwe_ui_laura_ev = evaluation_worflow.clone(name="topo_fdr_with_fwe_ui_laura_ev")
+
+compare_pipeline.connect([(datasource, topo_fdr_with_fwe_ui_laura,[('spm_mat_file','spm_mat_file')]),
+                          (convert_t_map, topo_fdr_with_fwe_ui_laura, [('fix_affine.transformed_volumes','stat_image')]),
+                          (infosource, topo_fdr_with_fwe_ui_laura, [(('subject_id', get_th_f), 'height_threshold')]),
+                                                
+                          (topo_fdr_with_fwe_ui_laura, topo_fdr_with_fwe_ui_laura_ev, [('thresholded_map','inputnode.map_to_evaluate')]),            
+                          (convert_manual, topo_fdr_with_fwe_ui_laura_ev, [('fix_affine.transformed_volumes', 'inputnode.expert_map')]),                 
+                          (datasource, topo_fdr_with_fwe_ui_laura_ev, [('tumour_mask','inputnode.tumour_mask')])
+                          ])
 
 
 ggmm = pe.Node(interface=nodes.ThresholdGGMM(no_deactivation_class=False), name="ggmm")
@@ -192,3 +239,4 @@ compare_pipeline.connect([
 
 
 compare_pipeline.run()
+#compare_pipeline.write_graph()
